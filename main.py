@@ -12,7 +12,7 @@ import helpers
 # path = images[5]
 # img1 = cv2.imread("test_images/"+path)
 
-cap = cv2.VideoCapture("test_videos/solidYellowLeft.mp4")
+cap = cv2.VideoCapture("test_videos/solidWhiteRight.mp4")
 
 while(cap.isOpened()):
     # Capture frame-by-frame
@@ -26,7 +26,7 @@ while(cap.isOpened()):
     result = canny1
 
     # 3 Region of Interest
-    vertices = np.array([((50, 540), (440, 325), (540, 325), (950, 540))])
+    vertices = np.array([((50, 540), (440, 350), (540, 350), (950, 540))])
     roi1 = helpers.region_of_interest(result, vertices)
     result = roi1
 
@@ -100,9 +100,9 @@ while(cap.isOpened()):
     # cv2.imshow("roi", roi1)
     #cv2.imshow("hough", hough1)
     # cv2.imshow("Lane Line Detection", result)
-    # plt.imshow(img1)
-    # plt.show()
-    cv2.imshow('frame', result)
+    plt.imshow(result)
+    plt.show()
+    #cv2.imshow('frame', result)
     if cv2.waitKey(60) & 0xFF == ord('q'):
         break
 
