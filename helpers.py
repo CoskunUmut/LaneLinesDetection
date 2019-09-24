@@ -72,6 +72,13 @@ def draw_lines(img, lines, color=[255, 0, 0], thickness=2):
             cv2.line(img, (x1, y1), (x2, y2), color, thickness)
 
 
+def draw_lines2(img, lines, color=[255, 0, 0], thickness=10):
+
+    for line in lines:
+        x1, y1, x2, y2 = line
+        cv2.line(img, (x1, y1), (x2, y2), color, thickness)
+
+
 def hough_lines(img, rho, theta, threshold, min_line_len, max_line_gap):
     """
     `img` should be the output of a Canny transform.
