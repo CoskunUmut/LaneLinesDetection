@@ -9,8 +9,8 @@ import helpers
 images = os.listdir("test_images/")
 
 # Load Image
-path = images[5]
-img1 = mpimg.imread("test_images/"+path)
+path = images[1]
+img1 = cv2.imread("test_images/"+path)
 
 
 # 2 Grayscale Image
