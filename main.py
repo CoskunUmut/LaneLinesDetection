@@ -6,13 +6,18 @@ import matplotlib.image as mpimg
 import math
 import helpers
 
-#images = os.listdir("test_images/")
+# images = os.listdir("test_images/")
 
 # Load Image
 # path = images[5]
 # img1 = cv2.imread("test_images/"+path)
 
-cap = cv2.VideoCapture("test_videos/solidWhiteRight.mp4")
+# cap = cv2.VideoCapture("test_videos/solidWhiteRight.mp4")
+cap = cv2.VideoCapture("test_videos/challenge.mp4")
+# cap = cv2.VideoCapture("test_videos/solidYellowLeft.mp4")
+_, img1 = cap.read()
+height, width, _ = img1.shape
+
 
 while(cap.isOpened()):
     # Capture frame-by-frame
@@ -20,21 +25,38 @@ while(cap.isOpened()):
     # 1 Grayscale Image
     gray1 = helpers.grayscale(img1)
     result = gray1
-
+    # 1.2
+    gauss1 = helpers.gaussian_blur(gray1, 5)
+    result = gauss1
     # 2 Canny
-    canny1 = helpers.canny(result, 200, 350)
+    canny1 = cv2.Canny(result, 150, 300)
     result = canny1
 
-    # 3 Region of Interest
-    vertices = np.array([((50, 540), (440, 350), (540, 350), (950, 540))])
-    roi1 = helpers.region_of_interest(result, vertices)
-    result = roi1
+    # RoI
+    vertices = np.array(
+        [((int(width*0.05), int(height*0.9)),
+          (int(width*0.4), int(height*0.65)),
+            (int(width*0.6), int(height*0.65)),
+            (int(width*0.95), int(height*0.9)))])
+    result = helpers.region_of_interest(result, vertices)
 
-    # 4 Hough Transformation
-    hough1 = helpers.hough_lines(result, 1, np.pi / 180, 25, 50, 200)
-    result = hough1
-    hough1_gray = helpers.grayscale(hough1)
-    hough1_gray = np.swapaxes(hough1_gray, 0, 1)
+    # 3 Hough Transform
+    result = helpers.hough_lines(result, 1, np.pi/180, 20, 25, 250)
+    # print(len(result))
+    # 4 RoI
+    # result[x/2,y=max-10%]
+   # hough1 = helpers.hough_lines(result, 1, np.pi / 180, 25, 50, 200)
+    # result = hough1
+    # 3 Region of Interest
+    # vertices = np.array([((50, 540), (440, 350), (540, 350), (950, 540))])
+    # roi1 = helpers.region_of_interest(result, vertices)
+    # result = roi1
+
+    # # 4 Hough Transformation
+    # hough1 = helpers.hough_lines(result, 1, np.pi / 180, 25, 50, 200)
+    # result = hough1
+    # hough1_gray = helpers.grayscale(hough1)
+    # hough1_gray = np.swapaxes(hough1_gray, 0, 1)
 
     # # Interpolating left/right lane lines
     # counter = 0
@@ -92,17 +114,18 @@ while(cap.isOpened()):
     # helpers.draw_lines2(result, lines_left)
 
     # Add result to original image
-    result = helpers.weighted_img(hough1, img1, 1.0, 1.0)
+    # result = helpers.weighted_img(hough1, img1, 1.0, 1.0)
 
     # Show result
     # cv2.imshow("canny", canny1)
     # cv2.imshow("glbur", gblur1)
     # cv2.imshow("roi", roi1)
-    #cv2.imshow("hough", hough1)
-    # cv2.imshow("Lane Line Detection", result)
-    plt.imshow(result)
-    plt.show()
-    #cv2.imshow('frame', result)
+    # cv2.imshow("hough", hough1)
+    cv2.imshow("Lane Line Detection", result)
+    cv2.imshow("Real Image", img1)
+    # plt.imshow(result)
+    # plt.show()
+    # cv2.imshow('frame', result)
     if cv2.waitKey(60) & 0xFF == ord('q'):
         break
 
