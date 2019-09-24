@@ -50,7 +50,7 @@ def region_of_interest(img, vertices):
     return masked_image
 
 
-def draw_lines(img, lines, color=[0, 0, 255], thickness=10):
+def draw_lines(img, lines, color=[0, 0, 255], thickness=3):
     """
     NOTE: this is the function you might want to use as a starting point once you want to 
     average/extrapolate the line segments you detect to map out the full
@@ -72,7 +72,7 @@ def draw_lines(img, lines, color=[0, 0, 255], thickness=10):
             cv2.line(img, (x1, y1), (x2, y2), color, thickness)
 
 
-def draw_lines2(img, lines, color=[0, 0, 255], thickness=10):
+def draw_lines2(img, lines, color=[0, 0, 255], thickness=3):
 
     for line in lines:
         x1, y1, x2, y2 = line

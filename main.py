@@ -6,15 +6,20 @@ import matplotlib.image as mpimg
 import math
 import helpers
 
+
+def average_brightness(roi):
+    print(roi.shape)
+
+
 # images = os.listdir("test_images/")
 
 # Load Image
 # path = images[5]
 # img1 = cv2.imread("test_images/"+path)
 
-# cap = cv2.VideoCapture("test_videos/solidWhiteRight.mp4")
+#cap = cv2.VideoCapture("test_videos/solidWhiteRight.mp4")
 cap = cv2.VideoCapture("test_videos/challenge.mp4")
-# cap = cv2.VideoCapture("test_videos/solidYellowLeft.mp4")
+#cap = cv2.VideoCapture("test_videos/solidYellowLeft.mp4")
 _, img1 = cap.read()
 height, width, _ = img1.shape
 
@@ -22,26 +27,53 @@ height, width, _ = img1.shape
 while(cap.isOpened()):
     # Capture frame-by-frame
     ret, img1 = cap.read()
+    result = img1
     # 1 Grayscale Image
-    gray1 = helpers.grayscale(img1)
-    result = gray1
+    # gray1 = helpers.grayscale(result)
+    # result = gray1
     # 1.2
-    gauss1 = helpers.gaussian_blur(gray1, 5)
-    result = gauss1
+    # gauss1 = helpers.gaussian_blur(result, 1)
+    # result = gauss1
+    # 1.1 Thresholding
+    # average brightness for dynamic threshold
+    _, result = cv2.threshold(result, 215, 255, cv2.THRESH_BINARY)
+    result = helpers.gaussian_blur(result, 9)
+
+    # _, thresh2 = cv2.threshold(gray1, 100, 255, cv2.THRESH_BINARY_INV)
+    # _, thresh3 = cv2.threshold(gray1, 225, d255, cv2.THRESH_TRUNC)
+    # _, thresh4 = cv2.threshold(gray1, 175, 255, cv2.THRESH_TOZERO)
+
     # 2 Canny
-    canny1 = cv2.Canny(result, 150, 300)
+    canny1 = cv2.Canny(result, 75, 200)
     result = canny1
 
     # RoI
+    # vertices = np.array(
+    #     [((int(width*0.05), int(height*0.9)),
+    #       (int(width*0.4), int(height*0.65)),
+    #         (int(width*0.6), int(height*0.65)),
+    #         (int(width*0.95), int(height*0.9)))])
     vertices = np.array(
-        [((int(width*0.05), int(height*0.9)),
-          (int(width*0.4), int(height*0.65)),
-            (int(width*0.6), int(height*0.65)),
-            (int(width*0.95), int(height*0.9)))])
+        [((int(width*0.15), int(height*0.9)),
+          (int(width*0.475), int(height*0.6)),
+            (int(width*0.55), int(height*0.6)),
+            (int(width*0.35), int(height*0.9)))])
     result = helpers.region_of_interest(result, vertices)
-
+    average_brightness(result)
     # 3 Hough Transform
-    result = helpers.hough_lines(result, 1, np.pi/180, 20, 25, 250)
+    try:
+        result = helpers.hough_lines(
+            result, 1, np.pi/180, 50, 25, 75)  # hier noch interpolieren
+        result = helpers.weighted_img(result, img1, 1, 1.0)
+    except:
+        _, result = cv2.threshold(img1, 175, 215, cv2.THRESH_BINARY)
+        result = helpers.gaussian_blur(result, 9)
+        result = cv2.Canny(result, 75, 200)
+        result = helpers.region_of_interest(result, vertices)
+        result = helpers.hough_lines(
+            result, 1, np.pi/180, 50, 25, 75)  # hier noch interpolieren
+        result = helpers.weighted_img(result, img1, 1, 1.0)
+
     # print(len(result))
     # 4 RoI
     # result[x/2,y=max-10%]
@@ -122,7 +154,7 @@ while(cap.isOpened()):
     # cv2.imshow("roi", roi1)
     # cv2.imshow("hough", hough1)
     cv2.imshow("Lane Line Detection", result)
-    cv2.imshow("Real Image", img1)
+    #cv2.imshow("Real Image", img1)
     # plt.imshow(result)
     # plt.show()
     # cv2.imshow('frame', result)
