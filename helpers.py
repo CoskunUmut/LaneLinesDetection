@@ -24,7 +24,7 @@ def gaussian_blur(img, kernel_size):
     return cv2.GaussianBlur(img, (kernel_size*2+1, kernel_size), 0)
 
 
-def region_of_interest(img, vertices, vertices2):
+def region_of_interest(img, vertices):
     """
     Applies an image mask.
 
@@ -34,7 +34,6 @@ def region_of_interest(img, vertices, vertices2):
     """
     # defining a blank mask to start with
     mask = np.zeros_like(img)
-    mask2 = np.zeros_like(img)
 
     # defining a 3 channel or 1 channel color to fill the mask with depending on the input image
     if len(img.shape) > 2:
@@ -45,10 +44,9 @@ def region_of_interest(img, vertices, vertices2):
 
     # filling pixels inside the polygon defined by "vertices" with the fill color
     cv2.fillPoly(mask, vertices, ignore_mask_color)
-    cv2.fillPoly(mask2, vertices2, ignore_mask_color)
 
     # returning the image only where mask pixels are nonzero
-    masked_image = cv2.bitwise_and(img, mask+mask2)
+    masked_image = cv2.bitwise_and(img, mask)
 
     return masked_image
 
@@ -70,9 +68,10 @@ def draw_lines(img, lines, color=[0, 0, 255], thickness=3):
     If you want to make the lines semi-transparent, think about combining
     this function with the weighted_img() function below
     """
+
     for line in lines:
-        for x1, y1, x2, y2 in line:
-            cv2.line(img, (x1, y1), (x2, y2), color, thickness)
+            for x1, y1, x2, y2 in line:
+                cv2.line(img, (x1, y1), (x2, y2), color, thickness)
 
 
 def draw_lines2(img, lines, color=[0, 0, 255], thickness=3):
