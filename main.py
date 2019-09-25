@@ -12,8 +12,8 @@ import helpers
 # path = images[5]
 # img1 = cv2.imread("test_images/"+path)
 # cap = cv2.VideoCapture("test_videos/solidWhiteRight.mp4")
-cap = cv2.VideoCapture("test_videos/challenge.mp4")
-# cap = cv2.VideoCapture("test_videos/solidYellowLeft.mp4")
+#cap = cv2.VideoCapture("test_videos/challenge.mp4")
+cap = cv2.VideoCapture("test_videos/solidYellowLeft.mp4")
 _, img1 = cap.read()
 height, width, _ = img1.shape
 
@@ -23,22 +23,28 @@ while(cap.isOpened()):
     ret, img1 = cap.read()
     result = img1
 
-    # 1.1 Thresholding
-    _, result = cv2.threshold(result, 215, 255, cv2.THRESH_BINARY)
-    # 1.2 Blurring for smoother edges
-    result = helpers.gaussian_blur(result, 9)
-    # # 2 Canny
-    canny1 = cv2.Canny(result, 75, 200)
-    result = canny1
+    # # 1.1 Thresholding
+    # _, result = cv2.threshold(result, 215, 255, cv2.THRESH_BINARY)
+    # # 1.2 Blurring for smoother edges
+    # result = helpers.gaussian_blur(result, 9)
+    # # # 2 Canny
+    # canny1 = cv2.Canny(result, 75, 200)
+    # result = canny1
 
-    # RoI
+    # RoI Left
     vertices = np.array(
-        [((int(width*0.15), int(height*0.9)),
-          (int(width*0.475), int(height*0.6)),
-            (int(width*0.55), int(height*0.6)),
+        [((int(width*0.1), int(height*0.9)),
+          (int(width*0.4), int(height*0.58)),
+            (int(width*0.55), int(height*0.58)),
             (int(width*0.35), int(height*0.9)))])
-    result = helpers.region_of_interest(result, vertices)
 
+    # RoI Right
+    vertices2 = np.array(
+        [((int(width*0.9), int(height*0.9)),
+          (int(width*0.6), int(height*0.58)),
+            (int(width*0.5), int(height*0.58)),
+            (int(width*0.65), int(height*0.9)))])
+    result = helpers.region_of_interest(result, vertices, vertices2)
     # # 3 Hough Transform
     # try:
     #     result = helpers.hough_lines(

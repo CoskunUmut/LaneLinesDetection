@@ -24,7 +24,7 @@ def gaussian_blur(img, kernel_size):
     return cv2.GaussianBlur(img, (kernel_size*2+1, kernel_size), 0)
 
 
-def region_of_interest(img, vertices):
+def region_of_interest(img, vertices, vertices2):
     """
     Applies an image mask.
 
@@ -34,6 +34,7 @@ def region_of_interest(img, vertices):
     """
     # defining a blank mask to start with
     mask = np.zeros_like(img)
+    mask2 = np.zeros_like(img)
 
     # defining a 3 channel or 1 channel color to fill the mask with depending on the input image
     if len(img.shape) > 2:
@@ -44,25 +45,27 @@ def region_of_interest(img, vertices):
 
     # filling pixels inside the polygon defined by "vertices" with the fill color
     cv2.fillPoly(mask, vertices, ignore_mask_color)
+    cv2.fillPoly(mask2, vertices2, ignore_mask_color)
 
     # returning the image only where mask pixels are nonzero
-    masked_image = cv2.bitwise_and(img, mask)
+    masked_image = cv2.bitwise_and(img, mask+mask2)
+
     return masked_image
 
 
 def draw_lines(img, lines, color=[0, 0, 255], thickness=3):
     """
-    NOTE: this is the function you might want to use as a starting point once you want to 
+    NOTE: this is the function you might want to use as a starting point once you want to
     average/extrapolate the line segments you detect to map out the full
     extent of the lane (going from the result shown in raw-lines-example.mp4
-    to that shown in P1_example.mp4).  
+    to that shown in P1_example.mp4).
 
-    Think about things like separating line segments by their 
+    Think about things like separating line segments by their
     slope ((y2-y1)/(x2-x1)) to decide which segments are part of the left
-    line vs. the right line.  Then, you can average the position of each of 
+    line vs. the right line.  Then, you can average the position of each of
     the lines and extrapolate to the top and bottom of the lane.
 
-    This function draws `lines` with `color` and `thickness`.    
+    This function draws `lines` with `color` and `thickness`.
     Lines are drawn on the image inplace (mutates the image).
     If you want to make the lines semi-transparent, think about combining
     this function with the weighted_img() function below
