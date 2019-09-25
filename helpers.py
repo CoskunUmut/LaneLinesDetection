@@ -70,8 +70,8 @@ def draw_lines(img, lines, color=[0, 0, 255], thickness=3):
     """
 
     for line in lines:
-            for x1, y1, x2, y2 in line:
-                cv2.line(img, (x1, y1), (x2, y2), color, thickness)
+        for x1, y1, x2, y2 in line:
+            cv2.line(img, (x1, y1), (x2, y2), color, thickness)
 
 
 def draw_lines2(img, lines, color=[0, 0, 255], thickness=3):
