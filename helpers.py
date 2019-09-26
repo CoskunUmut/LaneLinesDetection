@@ -51,7 +51,7 @@ def region_of_interest(img, vertices):
     return masked_image
 
 
-def draw_lines(img, lines, color=[0, 0, 255], thickness=3):
+def draw_lines(img, lines, color=[255, 255, 0], thickness=5):
     """
     NOTE: this is the function you might want to use as a starting point once you want to
     average/extrapolate the line segments you detect to map out the full
@@ -74,7 +74,7 @@ def draw_lines(img, lines, color=[0, 0, 255], thickness=3):
             cv2.line(img, (x1, y1), (x2, y2), color, thickness)
 
 
-def draw_lines2(img, lines, color=[0, 0, 255], thickness=3):
+def draw_lines2(img, lines, color=[255, 255, 0], thickness=5):
 
     for line in lines:
         x1, y1, x2, y2 = line
@@ -96,7 +96,7 @@ def hough_lines(img, rho, theta, threshold, min_line_len, max_line_gap):
 # Python 3 has support for cool math symbols.
 
 
-def weighted_img(img, initial_img, α=0.8, β=1., γ=0.):
+def weighted_img(img, initial_img, α=1, β=1., γ=0.):
     """
     `img` is the output of the hough_lines(), An image with lines drawn on it.
     Should be a blank image (all black) with lines drawn on it.

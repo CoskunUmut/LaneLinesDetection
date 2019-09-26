@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import math
 import helpers
-
+import collections
 
 # images = os.listdir("test_images/")
 # Load Image
@@ -13,8 +13,8 @@ import helpers
 # img1 = cv2.imread("test_images/"+path)
 #cap = cv2.VideoCapture("test_videos/solidWhiteRight.mp4")
 cap = cv2.VideoCapture("test_videos/challenge.mp4")
-#cap = cv2.VideoCapture("test_videos/solidYellowLeft.mp4")
-#cap = cv2.VideoCapture("test_videos/bs.mp4")
+# cap = cv2.VideoCapture("test_videos/solidYellowLeft.mp4")
+
 
 """Settings"""
 lower_yellow = np.array([10, 85, 150])
@@ -31,10 +31,20 @@ height = int(height/1.2)
 
 """Region of Interest"""
 vertices = np.array(
-    [((int(width*0.05), int(height*0.90)),
+    [((int(width*0.05), int(height*1)),
         (int(width*0.4), int(height*0.6)),
         (int(width*0.6), int(height*0.6)),
-        (int(width*0.95), int(height*0.90)))])
+        (int(width*0.95), int(height*1)))])
+vertices_left = np.array(
+    [((int(width*0.05), int(height*0.90)),
+        (int(width*0.45), int(height*0.6)),
+        (int(width*0.475), int(height*0.6)),
+        (int(width*0.4), int(height*0.90)))])
+vertices_right = np.array(
+    [((int(width*0.95), int(height*0.90)),
+        (int(width*0.55), int(height*0.60)),
+        (int(width*0.525), int(height*0.6)),
+        (int(width*0.6), int(height*0.90)))])
 
 """Main Loop"""
 while(cap.isOpened()):
@@ -56,47 +66,15 @@ while(cap.isOpened()):
     canny = result
     # 3 Region of Interest
     result = helpers.region_of_interest(result, vertices)
+    left = helpers.region_of_interest(img1, vertices_left)
+    right = helpers.region_of_interest(img1, vertices_right)
     roi = result
-    # 3 Hough Transform
+    # 4 Hough Transform
     try:
         result = helpers.hough_lines(
-            result, 1, np.pi/180, 15, 25, 75)  # hier noch interpolieren
-
-        # # 4 GrayScale
-        # result_left = helpers.grayscale(result_left)
-        # result_right = helpers.grayscale(result_right)
-        # gray_left = result_left
-        # # Finding non zero points
-        # right_lane = cv2.findNonZero(result_right)
-        # left_lane = cv2.findNonZero(result_left)
-        # xr = []
-        # yr = []
-        # xl = []
-        # yl = []
-        # pts = []
-        # for pr, pl in zip(right_lane, left_lane):
-        #     xr.append(pr[0][0])
-        #     yr.append(pr[0][1])
-        #     xl.append(pl[0][0])
-        #     yl.append(pl[0][1])
-
-        # # for y2 in range(int(height*0.65), int(height*0.9), dy):
-        # #     y1 =
-
-        # (ml, bl) = np.polyfit(xl, yl, 1)
-        # (mr, br) = np.polyfit(xr, yr, 1)
-        # dy = 10
-        # for y2 in range(int(height*0.65), int(height*0.9), dy):
-        #     y1 = y2-dy
-        #     x2r = int((y2-br) / mr)
-        #     x2l = int((y2-bl) / ml)
-        #     x1r = int((y1-br) / mr)
-        #     x1l = int((y1-bl) / ml)
-        #     cv2.line(result, (x1r, y1), (x2r, y2), (250, 255, 255), 5)
-        #     cv2.line(result, (x1l, y1), (x2l, y2), (250, 255, 255), 5)
+            result, 1.89, np.pi/180, 25, 25, 125)  # hier noch interpolieren
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-
     except:
         pass
 
@@ -105,7 +83,7 @@ while(cap.isOpened()):
 
     # Show Result
     cv2.imshow("Lane Line Detection", result)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    if cv2.waitKey(60) & 0xFF == ord('q'):
         break
 
 
