@@ -12,8 +12,6 @@ def grayscale(img):
     return cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     # Or use BGR2GRAY if you read an image with cv2.imread()
     # return cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-
 def canny(img, low_threshold, high_threshold):
     """Applies the Canny transform"""
     return cv2.Canny(img, low_threshold, high_threshold)
@@ -21,7 +19,7 @@ def canny(img, low_threshold, high_threshold):
 
 def gaussian_blur(img, kernel_size):
     """Applies a Gaussian Noise kernel"""
-    return cv2.GaussianBlur(img, (kernel_size*2+1, kernel_size), 0)
+    return cv2.GaussianBlur(img, (kernel_size * 2 + 1, kernel_size), 0)
 
 
 def region_of_interest(img, vertices):
@@ -35,14 +33,16 @@ def region_of_interest(img, vertices):
     # defining a blank mask to start with
     mask = np.zeros_like(img)
 
-    # defining a 3 channel or 1 channel color to fill the mask with depending on the input image
+    # defining a 3 channel or 1 channel color to fill the mask with depending
+    # on the input image
     if len(img.shape) > 2:
-        channel_count = img.shape[2]  # i.e. 3 or 4 depending on your image
+        channel_count = img.shape[2]  # i.e.  3 or 4 depending on your image
         ignore_mask_color = (255,) * channel_count
     else:
         ignore_mask_color = 255
 
-    # filling pixels inside the polygon defined by "vertices" with the fill color
+    # filling pixels inside the polygon defined by "vertices" with the fill
+    # color
     cv2.fillPoly(mask, vertices, ignore_mask_color)
 
     # returning the image only where mask pixels are nonzero
@@ -87,15 +87,12 @@ def hough_lines(img, rho, theta, threshold, min_line_len, max_line_gap):
 
     Returns an image with hough lines drawn.
     """
-    lines = cv2.HoughLinesP(img, rho, theta, threshold, np.array(
-        []), minLineLength=min_line_len, maxLineGap=max_line_gap)
+    lines = cv2.HoughLinesP(img, rho, theta, threshold, np.array([]), minLineLength=min_line_len, maxLineGap=max_line_gap)
     line_img = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.uint8)
     draw_lines(line_img, lines)
     return line_img
 
 # Python 3 has support for cool math symbols.
-
-
 def weighted_img(img, initial_img, α=1, β=1., γ=0.):
     """
     `img` is the output of the hough_lines(), An image with lines drawn on it.

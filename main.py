@@ -70,12 +70,39 @@ while(cap.isOpened()):
     img1 = cv2.resize(img1, (width, height),
                       interpolation=cv2.INTER_AREA)
     result = img1
-    # 1 Color Thresholding
-    hsv = cv2.cvtColor(result, cv2.COLOR_BGR2HSV)
-    hls = cv2.cvtColor(result,cv2.COLOR_RGB2HLS)
+    # 1.1 HLS Transformation and Thresholding
+    hls = cv2.cvtColor(result,cv2.COLOR_BGR2HLS)
     h = hls[:,:,0]
     l = hls[:,:,1]
-    s = hls[:,:,2]
+    s_channel = hls[:,:,2]
+    # 1.2 Sobel
+    gray = cv2.cvtColor(img1, cv2.COLOR_RGB2GRAY)
+    # Sobel x
+    sobelx = cv2.Sobel(gray, cv2.CV_64F, 1, 0) # Take the derivative in x
+    abs_sobelx = np.absolute(sobelx) # Absolute x derivative to accentuate lines away from horizontal
+    scaled_sobel = np.uint8(255 * abs_sobelx / np.max(abs_sobelx))
+    # Threshold x gradient
+    thresh_min = 75
+    thresh_max = 150
+    sxbinary = np.zeros_like(scaled_sobel)
+    sxbinary[(scaled_sobel >= thresh_min) & (scaled_sobel <= thresh_max)] = 255
+    # Threshold color channel
+    s_thresh_min = 170
+    s_thresh_max = 255
+    s_binary = np.zeros_like(s_channel)
+    s_binary[(s_channel >= s_thresh_min) & (s_channel <= s_thresh_max)] = 255
+    # Stack each channel to view their individual contributions in green and
+    # blue respectively
+    # This returns a stack of the two binary images, whose components you can
+    # see as different colors
+    color_binary = np.dstack((np.zeros_like(sxbinary), sxbinary, s_binary)) * 1
+
+    # Combine the two binary thresholds
+    combined_binary = np.zeros_like(sxbinary)
+    combined_binary[(s_binary == 255) | (sxbinary == 255)] = 255
+
+    # 1.2 Color Thresholding
+    hsv = cv2.cvtColor(result, cv2.COLOR_BGR2HSV)
     mask_yellow = cv2.inRange(hsv, lower_yellow, up_yellow)
     mask_white = cv2.inRange(hsv, lower_white, up_white)
     mask = mask_white + mask_yellow
@@ -158,7 +185,8 @@ while(cap.isOpened()):
 
     # Show Result
     cv2.imshow("Lane Line Detection", img1)
-    cv2.imshow("HLS", s)
+    cv2.imshow("HLS",  combined_binary)
+    cv2.imshow("HLV",  mask)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         continue
 
