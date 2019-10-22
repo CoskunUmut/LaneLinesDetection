@@ -15,37 +15,32 @@ import collections
 #cap = cv2.VideoCapture("test_videos/solidWhiteRight.mp4")
 cap = cv2.VideoCapture("test_videos/challenge.mp4")
 #cap = cv2.VideoCapture("test_videos/solidYellowLeft.mp4")
-
-
 """Settings"""
 lower_yellow = np.array([10, 125, 175])
 up_yellow = np.array([40, 255, 255])
 sensivity = 30
-lower_white = np.array([0, 0, 255-sensivity])
+lower_white = np.array([0, 0, 255 - sensivity])
 up_white = np.array([255, sensivity, 255])
 
 """Resize"""
 _, img1 = cap.read()
 height, width, _ = img1.shape
-width = int(width/1.2)
-height = int(height/1.2)
+width = int(width / 1.2)
+height = int(height / 1.2)
 
 """Region of Interest"""
-vertices = np.array(
-    [((int(width*0.05), int(height*1)),
-        (int(width*0.4), int(height*0.6)),
-        (int(width*0.6), int(height*0.6)),
-        (int(width*0.95), int(height*1)))])
-vertices_left = np.array(
-    [((int(width*0.05), int(height*1)),
-        (int(width*0.45), int(height*0.6)),
-        (int(width*0.475), int(height*0.6)),
-        (int(width*0.4), int(height*1)))])
-vertices_right = np.array(
-    [((int(width*0.95), int(height*1)),
-        (int(width*0.55), int(height*0.60)),
-        (int(width*0.525), int(height*0.6)),
-        (int(width*0.6), int(height*1)))])
+vertices = np.array([((int(width * 0.05), int(height * 1)),
+        (int(width * 0.4), int(height * 0.6)),
+        (int(width * 0.6), int(height * 0.6)),
+        (int(width * 0.95), int(height * 1)))])
+vertices_left = np.array([((int(width * 0.05), int(height * 1)),
+        (int(width * 0.45), int(height * 0.6)),
+        (int(width * 0.475), int(height * 0.6)),
+        (int(width * 0.4), int(height * 1)))])
+vertices_right = np.array([((int(width * 0.95), int(height * 1)),
+        (int(width * 0.55), int(height * 0.60)),
+        (int(width * 0.525), int(height * 0.6)),
+        (int(width * 0.6), int(height * 1)))])
 
 """Lane Stabilizer"""
 bl = []
@@ -77,9 +72,13 @@ while(cap.isOpened()):
     result = img1
     # 1 Color Thresholding
     hsv = cv2.cvtColor(result, cv2.COLOR_BGR2HSV)
+    hls = cv2.cvtColor(result,cv2.COLOR_RGB2HLS)
+    h = hls[:,:,0]
+    l = hls[:,:,1]
+    s = hls[:,:,2]
     mask_yellow = cv2.inRange(hsv, lower_yellow, up_yellow)
     mask_white = cv2.inRange(hsv, lower_white, up_white)
-    mask = mask_white+mask_yellow
+    mask = mask_white + mask_yellow
     # 2 Canny
     result = cv2.Canny(mask, 50, 200)
     canny = result
@@ -90,15 +89,15 @@ while(cap.isOpened()):
     roi = result
     # 4 Hough Transform
     try:
-        result = helpers.hough_lines(
-            result, 1.89, np.pi/180, 25, 25, 125)  # hier noch interpolieren
+        result = helpers.hough_lines(result, 1.89, np.pi / 180, 25, 25, 125)  # hier noch interpolieren
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
     except:
         pass
         # kernel = np.ones((5, 5), np.uint8)
         # result = cv2.morphologyEx(result, cv2.MORPH_CLOSE,
-        #                           kernel, dst=None, anchor=None, iterations=20)
+        #                           kernel, dst=None, anchor=None,
+        #                           iterations=20)
     gray = helpers.grayscale(result)
     dy = 15
     dx = 15
@@ -108,19 +107,19 @@ while(cap.isOpened()):
     yl = []
     xr = []
     yr = []
-    for y in range(height-1, int(height*0.6), -dy):
-        for x in range(0, int(width/2), dx):
+    for y in range(height - 1, int(height * 0.6), -dy):
+        for x in range(0, int(width / 2), dx):
             if(gray[y][x] > 150):
-                for ddx in range(x, int(width/2), 2):
-                    if(gray[y-dy*2][ddx] > 150):
+                for ddx in range(x, int(width / 2), 2):
+                    if(gray[y - dy * 2][ddx] > 150):
                         xl.append(ddx)
-                        yl.append(y-dy*2)
-        for x in range(width-1, int(width/2), -dx):
+                        yl.append(y - dy * 2)
+        for x in range(width - 1, int(width / 2), -dx):
             if(gray[y][x] > 150):
-                for ddx in range(x, int(width/2), -2):
-                    if(gray[y-dy*2][ddx] > 150):
+                for ddx in range(x, int(width / 2), -2):
+                    if(gray[y - dy * 2][ddx] > 150):
                         xr.append(ddx)
-                        yr.append(y-dy*2)
+                        yr.append(y - dy * 2)
     # for i in range(len(pts_left)):
     #     cv2.line(img1, pts_left[i], pts_left2[i], (255, 255, 0), 1)
     m = 0
@@ -133,10 +132,10 @@ while(cap.isOpened()):
     b = get_mean(bl, b)
     m = get_mean(ml, m)
 
-    for y1 in range(int(height), int(height*0.625), -dy):
+    for y1 in range(int(height), int(height * 0.625), -dy):
         y2 = y1 - dy
-        x1 = int((y1-b)/m)
-        x2 = int((y2-b)/m)
+        x1 = int((y1 - b) / m)
+        x2 = int((y2 - b) / m)
         cv2.line(img1, (x2, y2), (x1, y1), (250, 255, 0), 5)
 
     """Draw right lane"""
@@ -148,17 +147,18 @@ while(cap.isOpened()):
         b = get_mean(br, b)
         m = get_mean(mr, m)
     else:
-        b = get_mean(br, br[len(br)-1])
-        m = get_mean(mr, mr[len(mr)-1])
+        b = get_mean(br, br[len(br) - 1])
+        m = get_mean(mr, mr[len(mr) - 1])
 
-    for y1 in range(int(height), int(height*0.625), -dy):
+    for y1 in range(int(height), int(height * 0.625), -dy):
         y2 = y1 - dy
-        x1 = int((y1-b)/m)
-        x2 = int((y2-b)/m)
+        x1 = int((y1 - b) / m)
+        x2 = int((y2 - b) / m)
         cv2.line(img1, (x2, y2), (x1, y1), (250, 255, 0), 5)
 
     # Show Result
     cv2.imshow("Lane Line Detection", img1)
+    cv2.imshow("HLS", s)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         continue
 
