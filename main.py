@@ -12,9 +12,9 @@ import collections
 # Load Image
 # path = images[5]
 # img1 = cv2.imread("test_images/"+path)
-#cap = cv2.VideoCapture("test_videos/solidWhiteRight.mp4")
+# cap = cv2.VideoCapture("test_videos/solidWhiteRight.mp4")
 cap = cv2.VideoCapture("test_videos/challenge.mp4")
-#cap = cv2.VideoCapture("test_videos/solidYellowLeft.mp4")
+# cap = cv2.VideoCapture("test_videos/solidYellowLeft.mp4")
 """Settings"""
 lower_yellow = np.array([10, 125, 175])
 up_yellow = np.array([40, 255, 255])
@@ -56,6 +56,7 @@ dst = np.float32(
         (int(width * 1), int(height * 1)))]
 )
 M = cv2.getPerspectiveTransform(src, dst)
+Minv = cv2.getPerspectiveTransform(dst, src)
 """Lane Stabilizer"""
 bl = []
 br = []
@@ -129,7 +130,7 @@ while(cap.isOpened()):
     # Set the width of the windows +/- margin
     margin = 75
     # Set minimum number of pixels found to recenter window
-    minpix = 1000
+    minpix = 1100
     # Set height of windows - based on nwindows above and image shape
     window_height = np.int(height//nwindows)
     # Identify the x and y positions of all nonzero (i.e. activated) pixels in the image
@@ -142,9 +143,13 @@ while(cap.isOpened()):
     # Create empty lists to receive left and right lane pixel indices
     left_lane_inds = []
     right_lane_inds = []
-
+    leftx = []
+    lefty = []
+    rightx = []
+    righty = []
     for w in range(nwindows-1):
-        test2 = warped[int(height - (w+1) * window_height):height - (w) * window_height][0:width]
+        test2 = warped[int(height - (w+1) * window_height)
+                           :height - (w) * window_height][0:width]
         histogram = np.sum(test2, axis=0)
         midpoint = np.int(histogram.shape[0]//2)
         leftx_base = np.argmax(histogram[:midpoint])
@@ -163,16 +168,47 @@ while(cap.isOpened()):
                           (nonzerox >= win_xleft_low) & (nonzerox < win_xleft_high)).nonzero()[0]
         good_right_inds = ((nonzeroy <= win_y_low) & (nonzeroy > win_y_high) &
                            (nonzerox >= win_xright_low) & (nonzerox < win_xright_high)).nonzero()[0]
-        print(len(good_left_inds), len(good_right_inds))
         if(len(good_left_inds) > minpix):
-            cv2.rectangle(out_img, (win_xleft_low, win_y_low),
-                          (win_xleft_high, win_y_high), (255, 0, 0), 3)
+            leftx.append(leftx_base)
+            lefty.append(height - w * window_height - window_height//2)
+            # cv2.rectangle(out_img, (win_xleft_low, win_y_low),
+            #               (win_xleft_high, win_y_high), (255, 0, 0), 3)
         if(len(good_right_inds) > minpix):
-            cv2.rectangle(out_img, (win_xright_low, win_y_low),
-                          (win_xright_high, win_y_high), (255, 0, 0), 3)
-        #cv2.imshow("test222", test2)
-        # if cv2.waitKey(0) & 0xFF == ord('q'):
-        #     continue
+            rightx.append(rightx_base)
+            righty.append(height - w * window_height - window_height//2)
+            # cv2.rectangle(out_img, (win_xright_low, win_y_low),
+            #               (win_xright_high, win_y_high), (255, 0, 0), 3)
+    left_fit = np.polyfit(lefty, leftx, 2)
+    right_fit = np.polyfit(righty, rightx, 2)
+    # Generate x and y values for plotting
+    ploty = np.linspace(0, warped.shape[0]-1, 30)
+    try:
+        left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
+        right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
+    except TypeError:
+        # Avoids an error if `left` and `right_fit` are still none or incorrect
+        print('The function failed to fit a line!')
+        left_fitx = 1*ploty**2 + 1*ploty
+        right_fitx = 1*ploty**2 + 1*ploty
+    # # Colors in the left and right lane regions
+    # out_img[lefty, leftx] = [255, 0, 0]
+    # out_img[righty, rightx] = [0, 0, 255]
+    # Plots the left and right polynomials on the lane lines
+    # plt.plot(left_fitx, ploty, color='yellow')
+    # plt.plot(right_fitx, ploty, color='yellow')
+    # plt.show()
+    no_image = np.zeros([height, width, 3], dtype=np.uint8)
+
+    for i in range(len(ploty)-1):
+        cv2.line(no_image, (int(left_fitx[i]), int(ploty[i])),
+                 (int(left_fitx[i+1]), int(ploty[i+1])), (255, 0, 0), 30)
+        cv2.line(no_image, (int(right_fitx[i]), int(ploty[i])),
+                 (int(right_fitx[i+1]), int(ploty[i+1])), (255, 0, 0), 30)
+    rewarped = cv2.warpPerspective(
+        no_image, Minv, (width, height), flags=cv2.INTER_LINEAR)
+    # cv2.imshow("test222", test2)
+    # if cv2.waitKey(0) & 0xFF == ord('q'):
+    #     continue
 
     # dy = 15
     # dx = 15
@@ -230,10 +266,10 @@ while(cap.isOpened()):
     #     cv2.line(img1, (x2, y2), (x1, y1), (250, 255, 0), 5)
 
     # Show Result
-    cv2.imshow("Lane Line Detection", img1)
-    #cv2.imshow("Warped", warped)
-    cv2.imshow("test",   out_img)
-    if cv2.waitKey(0) & 0xFF == ord('q'):
+    cv2.imshow("Lane Line Detection", cv2.add(img1, rewarped))
+    # cv2.imshow("Warped", warped)
+    cv2.imshow("test",   rewarped)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
         continue
 
 
