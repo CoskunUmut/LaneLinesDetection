@@ -89,11 +89,10 @@ while(cap.isOpened()):
     mask_yellow = cv2.inRange(hsv, lower_yellow, up_yellow)
     mask_white = cv2.inRange(hsv, lower_white, up_white)
     mask = mask_white + mask_yellow
+   
     # 2 Canny
     result = cv2.Canny(mask, 50, 200)
     canny = result
-    # 2.1 Prespective Transformation
-    warped = cv2.warpPerspective(result, M, (width,height), flags=cv2.INTER_LINEAR)
     # 3 Region of Interest
     result = helpers.region_of_interest(result, vertices)
     left = helpers.region_of_interest(img1, vertices_left)
@@ -110,11 +109,17 @@ while(cap.isOpened()):
         # result = cv2.morphologyEx(result, cv2.MORPH_CLOSE,
         #                           kernel, dst=None, anchor=None,
         #                           iterations=20)
+     # 1.2 Prespective Transformation
     gray = helpers.grayscale(result)
+    warped = cv2.warpPerspective(gray, M, (width,height), flags=cv2.INTER_LINEAR)
+    test =warped[int(height/2):height][0:width]
+    histogram = np.sum(test,axis=0)
+    plt.cla()
+    plt.plot(histogram)
+    plt.pause(0.01)
+   
     dy = 15
     dx = 15
-    # counter = 0
-    # gray = helpers.grayscale(result)
     xl = []
     yl = []
     xr = []
@@ -171,6 +176,7 @@ while(cap.isOpened()):
     # Show Result
     cv2.imshow("Lane Line Detection", img1)
     cv2.imshow("Warped", warped)
+    cv2.imshow("test",test)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         continue
 
