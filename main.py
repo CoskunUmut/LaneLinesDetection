@@ -4,14 +4,17 @@ import matplotlib.pyplot as plt
 import helpers
 
 """Test Videos"""
-cap = cv2.VideoCapture("test_videos/solidWhiteRight.mp4")
-#cap = cv2.VideoCapture("test_videos/challenge.mp4")
+cap = cv2.VideoCapture("test_videos/harder_challenge_video.mp4")
+#cap = cv2.VideoCapture("test_videos/challenge_video.mp4")
+#cap = cv2.VideoCapture("test_videos/project_video.mp4")
 #cap = cv2.VideoCapture("test_videos/solidYellowLeft.mp4")
+#cap = cv2.VideoCapture("test_videos/challenge.mp4")
+
 """Settings"""
 # Hyperparameters #
-lower_yellow = np.array([10, 75, 175])
+lower_yellow = np.array([10, 75, 100])
 up_yellow = np.array([40, 255, 255])
-sensivity = 40
+sensivity = 5
 
 lower_white = np.array([0, 0, 255 - sensivity])
 up_white = np.array([255, sensivity, 255])
@@ -35,7 +38,7 @@ nwindows = 9
 # Set the width of the windows +/- margin
 margin = 80
 # Set minimum number of pixels found to accept
-minpix = 35
+minpix = 25
 # Slide search rectangle
 slide_offset = 30
 # Set height of windows - based on nwindows above and image shape
@@ -81,7 +84,6 @@ def polyfit_lanes(warped):
     righty = []
     slide_right = 0
     slide_left = 0
-
     for w in range(nwindows):
         win_y_low = (height - (w) * window_height)
         win_y_high = (height - (w+1) * window_height)
@@ -127,8 +129,9 @@ def polyfit_lanes(warped):
     rightx = nonzerox[right_lane_inds]
     righty = nonzeroy[right_lane_inds]
     # Polyfit x²-Function
-    left_fit = np.polyfit(lefty, leftx, 2)
-    right_fit = np.polyfit(righty, rightx, 2)
+    if(len(leftx) != 0 or len(rightx) != 0):
+        left_fit = np.polyfit(lefty, leftx, 2)
+        right_fit = np.polyfit(righty, rightx, 2)
     # Generate x and y values for plotting
     ploty = np.linspace(0, warped.shape[0]-1, warped.shape[0])
     try:
@@ -139,42 +142,152 @@ def polyfit_lanes(warped):
         print('The function failed to fit a line!')
         left_fitx = 1*ploty**2 + 1*ploty
         right_fitx = 1*ploty**2 + 1*ploty
-    return ploty, left_fitx, right_fitx
+    return ploty, left_fitx, right_fitx, left_fit, right_fit
 
 
+# Initial condition for searching around poly
+left_fit = np.array([-1.13182013e-04, -4.33666838e-01, 3.04037020e+02])
+right_fit = np.array([2.17223005e-04, 3.16143126e-01, 5.60111860e+02])
+
+
+def fit_poly(img_shape, leftx, lefty, rightx, righty):
+     ### TO-DO: Fit a second order polynomial to each with np.polyfit() ###
+    if(len(leftx) != 0 or len(rightx) != 0):
+        print(rightx)
+        left_fit = np.polyfit(lefty, leftx, 2)
+        right_fit = np.polyfit(righty, rightx, 2)
+    # Generate x and y values for plotting
+    ploty = np.linspace(0, img_shape[0]-1, img_shape[0])
+    ### Calc both polynomials using ploty, left_fit and right_fit ###
+    left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
+    right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
+
+    return left_fitx, right_fitx, ploty
+
+
+def search_around_poly(binary_warped, left_fit, right_fit):
+    # HYPERPARAMETER
+    # Choose the width of the margin around the previous polynomial to search
+    # The quiz grader expects 100 here, but feel free to tune on your own!
+    margin = 100
+
+    # Grab activated pixels
+    nonzero = binary_warped.nonzero()
+    nonzeroy = np.array(nonzero[0])
+    nonzerox = np.array(nonzero[1])
+
+    ### TO-DO: Set the area of search based on activated x-values ###
+    ### within the +/- margin of our polynomial function ###
+    ### Hint: consider the window areas for the similarly named variables ###
+    ### in the previous quiz, but change the windows to our new search area ###
+    left_lane_inds = ((nonzerox > (left_fit[0]*(nonzeroy**2) + left_fit[1]*nonzeroy +
+                                   left_fit[2] - margin)) & (nonzerox < (left_fit[0]*(nonzeroy**2) +
+                                                                         left_fit[1]*nonzeroy + left_fit[2] + margin)))
+    right_lane_inds = ((nonzerox > (right_fit[0]*(nonzeroy**2) + right_fit[1]*nonzeroy +
+                                    right_fit[2] - margin)) & (nonzerox < (right_fit[0]*(nonzeroy**2) +
+                                                                           right_fit[1]*nonzeroy + right_fit[2] + margin)))
+
+    # Again, extract left and right line pixel positions
+    leftx = nonzerox[left_lane_inds]
+    lefty = nonzeroy[left_lane_inds]
+    rightx = nonzerox[right_lane_inds]
+    righty = nonzeroy[right_lane_inds]
+
+    # Fit new polynomials
+    left_fitx, right_fitx, ploty = fit_poly(
+        binary_warped.shape, leftx, lefty, rightx, righty)
+
+    ## Visualization ##
+    # Create an image to draw on and an image to show the selection window
+    out_img = np.dstack((binary_warped, binary_warped, binary_warped))*255
+    window_img = np.zeros_like(out_img)
+    # Color in left and right line pixels
+    out_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
+    out_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
+
+    # Generate a polygon to illustrate the search window area
+    # And recast the x and y points into usable format for cv2.fillPoly()
+    left_line_window1 = np.array(
+        [np.transpose(np.vstack([left_fitx-margin, ploty]))])
+    left_line_window2 = np.array([np.flipud(np.transpose(np.vstack([left_fitx+margin,
+                                                                    ploty])))])
+    left_line_pts = np.hstack((left_line_window1, left_line_window2))
+    right_line_window1 = np.array(
+        [np.transpose(np.vstack([right_fitx-margin, ploty]))])
+    right_line_window2 = np.array([np.flipud(np.transpose(np.vstack([right_fitx+margin,
+                                                                     ploty])))])
+    right_line_pts = np.hstack((right_line_window1, right_line_window2))
+
+    # Draw the lane onto the warped blank image
+    cv2.fillPoly(window_img, np.int_([left_line_pts]), (0, 255, 0))
+    cv2.fillPoly(window_img, np.int_([right_line_pts]), (0, 255, 0))
+    result = cv2.addWeighted(out_img, 1, window_img, 0.3, 0)
+
+    # Plot the polynomial lines onto the image
+    plt.plot(left_fitx, ploty, color='yellow')
+    plt.plot(right_fitx, ploty, color='yellow')
+    ## End visualization steps ##
+
+    return result, ploty, left_fitx, right_fitx
+
+
+first_time = True
 """Main Loop"""
 while(cap.isOpened()):
     # Capture frame-by-frame
     ret, img1 = cap.read()
     if not ret:
         break
-    # 1 Resize
+    """ 1 Resize """
     img1 = cv2.resize(img1, (width, height),
                       interpolation=cv2.INTER_AREA)
     result = img1
-    # 2 Color Thresholding
+    """ 2 Color Thresholding """
     hsv = cv2.cvtColor(result, cv2.COLOR_BGR2HSV)
+    hls = cv2.cvtColor(result, cv2.COLOR_BGR2HLS)
     mask_yellow = cv2.inRange(hsv, lower_yellow, up_yellow)
     mask_white = cv2.inRange(hsv, lower_white, up_white)
     mask = mask_white + mask_yellow
-    # 3 Prespective Transformation + RoI included
+    cv2.imshow("yeelow mask", mask_yellow)
+    cv2.imshow("white mask", mask_white)
+    cv2.imshow("h", hls[:, :, 0])
+    cv2.imshow("l", hls[:, :, 1])
+    cv2.imshow("s", hls[:, :, 2])
+    img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2RGB)
+    #cv2.imshow("yeelow", img1[:, :, 2])
+    """ 3 Prespective Transformation + RoI included """
     warped = cv2.warpPerspective(
         mask, M, (width, height), flags=cv2.INTER_LINEAR)
-    # 4 Polyfit found lanes
-    ploty, left_fitx, right_fitx = polyfit_lanes(warped)
-    # 5 Create lane line image to add onto original image
-    lane_line = np.zeros([height, width, 3], dtype=np.uint8)
-    for i in range(len(ploty)-1):
-        cv2.line(lane_line, (int(left_fitx[i]), int(ploty[i])),
-                 (int(left_fitx[i+1]), int(ploty[i+1])), (0, 0, 255), 30)
-        cv2.line(lane_line, (int(right_fitx[i]), int(ploty[i])),
-                 (int(right_fitx[i+1]), int(ploty[i+1])), (0, 0, 255), 30)
-    # 6 Inverse Transformation
-    rewarped = cv2.warpPerspective(
-        lane_line, Minv, (width, height), flags=cv2.INTER_LINEAR)
+    """ 4 Polyfit found lanes """
+    # try:
+    #     if(first_time):
+    #         ploty, left_fitx, right_fitx, left_fit, right_fit = polyfit_lanes(
+    #             warped)
+    #         first_time = False
+    #     # Searching around last fit
+    #     show_search, ploty,  left_fitx, right_fitx = search_around_poly(
+    #         warped, left_fit, right_fit)
+    #     cv2.imshow("Show Search", show_search)
 
-    # Show Result
-    cv2.imshow("Lane Line Detection", cv2.add(img1, rewarped))
+    # except:
+    # Sliding-Window search if not found within last fit margins
+    # ploty, left_fitx, right_fitx, left_fit, right_fit = polyfit_lanes(
+    #     warped)
+    # print(left_fit, right_fit)
+    # pass
+    # """ 5 Create lane line image to add onto original image """
+    # lane_line = np.zeros([height, width, 3], dtype=np.uint8)
+    # for i in range(len(ploty)-1):
+    #     cv2.line(lane_line, (int(left_fitx[i]), int(ploty[i])),
+    #              (int(left_fitx[i+1]), int(ploty[i+1])), (0, 0, 255), 30)
+    #     cv2.line(lane_line, (int(right_fitx[i]), int(ploty[i])),
+    #              (int(right_fitx[i+1]), int(ploty[i+1])), (0, 0, 255), 30)
+    # """ 6 Inverse Transformation """
+    # rewarped = cv2.warpPerspective(
+    #     lane_line, Minv, (width, height), flags=cv2.INTER_LINEAR)
+
+    # # Show Result
+    # cv2.imshow("Lane Line Detection", cv2.add(img1, rewarped))
     if cv2.waitKey(1) & 0xFF == ord('q'):
         continue
 
