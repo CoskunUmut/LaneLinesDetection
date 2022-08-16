@@ -1,5 +1,4 @@
-# LaneLinesDetection
-Self Driving Cars
+# Lane Line Detection 
 
 > Line Lane Detection 
 
